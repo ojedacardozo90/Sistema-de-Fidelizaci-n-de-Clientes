@@ -10,6 +10,10 @@ bajo el prefijo /api/.
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework import routers
+from backend.clientes.views import ClienteViewSet
+
 
 # -------------------------------------------------
 # Vista base de prueba (opcional)
@@ -27,13 +31,16 @@ def home(request):
         }
     })
 
+router = routers.DefaultRouter()
+router.register(r'clientes', ClienteViewSet, basename='clientes')
 # -------------------------------------------------
 # URL Patterns principales
 # -------------------------------------------------
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),                # Página raíz simple
-    path('api/', include('fidelizacion.urls')), # Incluye todas las rutas de fidelización
-    path("api/fidelizacion/", include("fidelizacion.urls")),
-
+    path('api/', include('backend.fidelizacion.urls')),    # Incluye todas las rutas de fidelización
+    path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/', include(router.urls)),
+    path('api/', include('backend.fidelizacion.urls')),
 ]

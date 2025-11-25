@@ -1,5 +1,6 @@
 from django.utils import timezone
-from fidelizacion.models import BolsaPuntos
+from backend.fidelizacion.models import BolsaPuntos
+
 
 def handle(*args, **options):
     ahora = timezone.now()

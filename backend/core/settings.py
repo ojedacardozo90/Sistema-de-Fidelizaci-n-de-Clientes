@@ -24,16 +24,19 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Terceros
+  # Terceros
     'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
 
-    # Apps del proyecto
-    'clientes',
-    'fidelizacion',
+    # Nuestra app principal
+    'backend.clientes',
+    'backend.fidelizacion',
 ]
 
 # Middleware por defecto
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -43,7 +46,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'core.urls'
+ROOT_URLCONF = 'backend.core.urls'
 
 # Templates por defecto
 TEMPLATES = [
@@ -61,7 +64,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'core.wsgi.application'
+WSGI_APPLICATION = 'backend.core.wsgi.application'
 
 # Base de datos: PostgreSQL (ajustá credenciales si usaste otras)
 DATABASES = {
@@ -82,6 +85,13 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Localización Paraguay
 LANGUAGE_CODE = 'es-py'

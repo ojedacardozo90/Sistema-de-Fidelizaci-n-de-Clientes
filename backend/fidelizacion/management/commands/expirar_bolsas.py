@@ -11,7 +11,8 @@ Uso:
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from fidelizacion.models import BolsaPuntos
+from backend.fidelizacion.models import BolsaPuntos
+
 
 class Command(BaseCommand):
     help = "Actualiza las bolsas de puntos vencidas (estado = VENCIDO)."

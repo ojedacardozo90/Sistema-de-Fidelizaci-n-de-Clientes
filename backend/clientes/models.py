@@ -1,6 +1,5 @@
 """
 RUTA: clientes/models.py
-====================================================
 Modelo principal del Cliente del Sistema de Fidelización.
 ====================================================
 """
@@ -8,7 +7,7 @@ Modelo principal del Cliente del Sistema de Fidelización.
 from django.db import models
 
 
-# ============================================================
+
 # 1cLIENTE
 # ============================================================
 class Cliente(models.Model):
@@ -18,7 +17,7 @@ class Cliente(models.Model):
     BolsaPuntos, UsoPuntos,
     """
 
-    # ------------------------
+    
     # Datos personales
     # ------------------------
     nombre = models.CharField(max_length=100)
@@ -30,7 +29,7 @@ class Cliente(models.Model):
     telefono = models.CharField(max_length=20, blank=True, null=True)
     fecha_nacimiento = models.DateField(blank=True, null=True)
 
-    # ------------------------
+    
     # Fidelización
     # ------------------------
     nivel_fidelizacion = models.CharField(
@@ -44,7 +43,7 @@ class Cliente(models.Model):
         default="BRONCE",
     )
 
-    # ------------------------
+    
     # Gestión y control
     # ------------------------
     fecha_registro = models.DateTimeField(auto_now_add=True)
@@ -58,7 +57,7 @@ class Cliente(models.Model):
     def __str__(self):
         return f"{self.nombre} {self.apellido} ({self.numero_documento})"
 
-    # ============================================================
+    
     # MÉTODO: actualizar_nivel
     # ============================================================
     def actualizar_nivel(self):

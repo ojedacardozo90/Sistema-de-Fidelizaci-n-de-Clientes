@@ -1,6 +1,6 @@
 """
 RUTA: clientes/admin.py
-===========================================================
+
 MÓDULO: Administración de Clientes
 ===========================================================
 Permite gestionar desde el panel de Django Admin los datos
@@ -17,10 +17,11 @@ Incluye:
 
 from django.contrib import admin
 from .models import Cliente
-from fidelizacion.models import BolsaPuntos
+from backend.fidelizacion.models import BolsaPuntos
 
 
-# ============================================================
+
+
 # FILTRO PERSONALIZADO: Rango de puntos disponibles
 # ============================================================
 class PuntosRangoFilter(admin.SimpleListFilter):
@@ -52,7 +53,7 @@ class PuntosRangoFilter(admin.SimpleListFilter):
         return queryset.filter(id__in=clientes_ids)
 
 
-# ============================================================
+
 # ADMIN: Clientes
 # ============================================================
 @admin.register(Cliente)
@@ -74,7 +75,7 @@ class ClienteAdmin(admin.ModelAdmin):
     search_fields = ("nombre", "apellido", "numero_documento", "email")
     ordering = ("apellido", "nombre")
 
-    # ------------------------------------------------------------
+    
     # Cálculo dinámico de puntos disponibles
     # ------------------------------------------------------------
     def puntos_disponibles(self, obj):

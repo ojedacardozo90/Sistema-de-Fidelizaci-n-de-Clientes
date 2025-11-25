@@ -26,6 +26,14 @@ El proyecto desarrollado se validará con peticiones GET, POST, PUT y DELETE que
 3. Configuración del Backend (Django)
 
 3.1 Clonar el repositorio o copiar el proyecto
+cd /c/Users/Ojeda/fidelizacion_system/backend
+cd /c/Users/Ojeda/fidelizacion_system/frontend
+npm run dev
+npm run dev
+
+source venv/bin/activate
+source venv/Scripts/activate
+python manage.py runserver
 
 3.2 Crear y activar el entorno virtual
 python -m venv venv
