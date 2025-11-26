@@ -5,7 +5,7 @@ Modelo principal del Cliente del Sistema de Fidelización.
 """
 
 from django.db import models
-
+import uuid
 
 
 # 1cLIENTE
@@ -28,8 +28,26 @@ class Cliente(models.Model):
     email = models.EmailField(max_length=120, blank=True, null=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     fecha_nacimiento = models.DateField(blank=True, null=True)
-
+    codigo_referido = models.CharField(max_length=20, unique=True, blank=True)
     
+    # Cliente que lo refirió (opcional)
+    referido_por = models.ForeignKey(
+    "self",
+    null=True,
+    blank=True,
+    on_delete=models.SET_NULL,
+    related_name="referidos_por_cliente"
+
+)
+
+
+    def save(self, *args, **kwargs):
+        # Generar código único la primera vez
+        if not self.codigo_referido:
+            self.codigo_referido = uuid.uuid4().hex[:8].upper()
+        super().save(*args, **kwargs)
+
+
     # Fidelización
     # ------------------------
     nivel_fidelizacion = models.CharField(

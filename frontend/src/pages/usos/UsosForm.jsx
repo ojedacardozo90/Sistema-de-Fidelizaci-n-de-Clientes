@@ -1,98 +1,128 @@
+// RUTA: src/pages/usos/UsoForm.jsx
+// FORM Figma — Uso de Puntos (FIFO)
+
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 import { endpoints } from "../../services/endpoints";
 
-export default function UsoForm({ onSuccess }) {
+import FigmaInput from "../../components/base/FigmaInput";
+import FigmaButton from "../../components/base/FigmaButton";
+
+export default function UsoForm({ uso, onSuccess }) {
   const [clientes, setClientes] = useState([]);
   const [conceptos, setConceptos] = useState([]);
-  const [error, setError] = useState("");
 
   const [form, setForm] = useState({
-    cliente_id: "",
-    concepto_id: "",
-    puntos_requeridos: ""
+    cliente_id: uso?.cliente?.id || "",
+    concepto_id: uso?.concepto?.id || "",
+    puntos_utilizados: uso?.puntos_utilizados || "",
   });
 
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  // CARGAR CLIENTES Y CONCEPTOS
   useEffect(() => {
-    api.get(endpoints.clientes).then(res => setClientes(res.data));
-    api.get(endpoints.conceptos).then(res => setConceptos(res.data));
+    api.get(endpoints.clientes).then((r) => setClientes(r.data));
+    api.get(endpoints.conceptos).then((r) => setConceptos(r.data));
   }, []);
 
-  const handleChange = e => {
-    const { name, value } = e.target;
-
-    setForm({
-      ...form,
-      [name]: value
-    });
-
-    // Autocompletar puntos requeridos
-    if (name === "concepto_id") {
-      const c = conceptos.find(x => x.id == value);
-      if (c) setForm(f => ({ ...f, puntos_requeridos: c.puntos_requeridos }));
-    }
-  };
-
   const save = () => {
-    setError("");
-
-    api.post(endpoints.usar_puntos, form)
-      .then(() => onSuccess())
-      .catch(err => {
-        setError(err.response?.data?.detail || err.response?.data?.error || "Error al usar puntos");
+    api
+      .post(endpoints.usar_puntos, form)
+      .then(onSuccess)
+      .catch((err) => {
+        alert(err.response?.data?.error || "Error al usar puntos");
       });
   };
 
+  // SI ES SOLO VISUALIZAR DETALLE
+  if (uso) {
+    return (
+      <div className="w-[500px] space-y-4">
+        <h2 className="text-2xl font-bold text-figmaPrimary">Detalle del Uso</h2>
+
+        <div className="bg-white shadow-card rounded-lg p-4">
+          <p className="text-lg">
+            Cliente:{" "}
+            <b>
+              {uso.cliente.nombre} {uso.cliente.apellido}
+            </b>
+          </p>
+          <p>Concepto: <b>{uso.concepto.descripcion}</b></p>
+          <p>Puntos Utilizados: <b>{uso.puntos_utilizados}</b></p>
+          <p>Fecha: {new Date(uso.fecha).toLocaleString()}</p>
+        </div>
+
+        <h3 className="text-xl font-semibold text-grayDark">Consumo FIFO</h3>
+
+        {uso.detalles.map((d) => (
+          <div
+            key={d.id}
+            className="bg-lightBg border border-grayLight rounded-lg p-3"
+          >
+            <p>Bolsa ID: <b>{d.bolsa_id}</b></p>
+            <p>Puntos descontados: <b>{d.puntos_utilizados}</b></p>
+            <p>Caduca: {new Date(d.fecha_caducidad).toLocaleString()}</p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // FORMULARIO PARA CREAR USO
   return (
-    <div className="space-y-4 w-[420px]">
-      <h2 className="text-xl font-bold text-primary">Canjear Puntos</h2>
+    <div className="w-[500px] space-y-4">
 
-      {error && (
-        <div className="bg-red-100 text-red-700 p-2 rounded">{error}</div>
-      )}
+      <h2 className="text-2xl font-bold text-figmaPrimary">Nuevo Uso de Puntos</h2>
 
-      <label className="text-sm font-semibold">Cliente</label>
-      <select
-        name="cliente_id"
-        value={form.cliente_id}
-        onChange={handleChange}
-        className="border p-2 rounded w-full"
-      >
-        <option value="">Seleccione…</option>
-        {clientes.map(c => (
-          <option key={c.id} value={c.id}>
-            {c.nombre} {c.apellido}
-          </option>
-        ))}
-      </select>
+      {/* SELECT CLIENTE */}
+      <div className="flex flex-col gap-1">
+        <label className="text-grayDark font-medium">Cliente</label>
+        <select
+          name="cliente_id"
+          value={form.cliente_id}
+          onChange={handleChange}
+          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-figmaPrimary"
+        >
+          <option value="">Seleccione...</option>
+          {clientes.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.nombre} {c.apellido}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <label className="text-sm font-semibold">Concepto</label>
-      <select
-        name="concepto_id"
-        value={form.concepto_id}
-        onChange={handleChange}
-        className="border p-2 rounded w-full"
-      >
-        <option value="">Seleccione…</option>
-        {conceptos.map(c => (
-          <option key={c.id} value={c.id}>
-            {c.descripcion} — {c.puntos_requeridos} pts
-          </option>
-        ))}
-      </select>
+      {/* SELECT CONCEPTO */}
+      <div className="flex flex-col gap-1">
+        <label className="text-grayDark font-medium">Concepto</label>
+        <select
+          name="concepto_id"
+          value={form.concepto_id}
+          onChange={handleChange}
+          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-figmaPrimary"
+        >
+          <option value="">Seleccione...</option>
+          {conceptos.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.descripcion}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <label className="text-sm font-semibold">Puntos a Utilizar</label>
-      <input
+      <FigmaInput
+        label="Puntos a Utilizar"
         type="number"
-        readOnly
-        name="puntos_requeridos"
-        value={form.puntos_requeridos}
-        className="border p-2 rounded w-full bg-gray-100"
+        name="puntos_utilizados"
+        value={form.puntos_utilizados}
+        onChange={handleChange}
       />
 
-      <button className="bg-primary text-white w-full py-2 rounded" onClick={save}>
-        Confirmar Canje
-      </button>
+      <FigmaButton className="w-full" onClick={save}>
+        Confirmar Uso
+      </FigmaButton>
     </div>
   );
 }

@@ -13,7 +13,7 @@ from django.http import JsonResponse
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import routers
 from backend.clientes.views import ClienteViewSet
-
+from backend.fidelizacion.views_dashboard import dashboard_metrics, dashboard_analytics
 
 # -------------------------------------------------
 # Vista base de prueba (opcional)
@@ -39,8 +39,9 @@ router.register(r'clientes', ClienteViewSet, basename='clientes')
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),                # Página raíz simple
-    path('api/', include('backend.fidelizacion.urls')),    # Incluye todas las rutas de fidelización
+        # Incluye todas las rutas de fidelización
     path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/', include(router.urls)),
     path('api/', include('backend.fidelizacion.urls')),
+    path("api/dashboard_metrics/", dashboard_metrics),
+    path("api/dashboard_analytics/", dashboard_analytics),
 ]

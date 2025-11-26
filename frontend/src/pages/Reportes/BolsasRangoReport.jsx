@@ -1,64 +1,39 @@
-/**
- * BolsasRangoReport.jsx
- * -----------------------------------------------------------
- * Devuelve bolsas filtradas según rango de puntos:
- *  GET /consultas/bolsas_por_rango/?min=&max=
- * -----------------------------------------------------------
- */
+// RUTA: src/pages/reportes/BolsasRangoReport.jsx
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../../services/api";
-import Table from "../../components/Table";
+import { endpoints } from "../../services/endpoints";
+import FigmaTable from "../../components/base/FigmaTable";
 
 export default function BolsasRangoReport() {
-  const [minimo, setMinimo] = useState(0);
-  const [maximo, setMaximo] = useState(500);
-  const [bolsas, setBolsas] = useState([]);
+  const [datos, setDatos] = useState([]);
 
-  const consultar = () => {
+  useEffect(() => {
     api
-      .get(`/consultas/bolsas_por_rango/?min=${minimo}&max=${maximo}`)
-      .then((res) => setBolsas(res.data))
-      .catch(console.error);
-  };
-
-  const headers = ["ID", "Cliente", "Asignados", "Usados", "Saldo"];
-
-  const rows = bolsas.map((b) => ({
-    id: b.id,
-    cliente: `${b.cliente.nombre} ${b.cliente.apellido}`,
-    asignados: b.puntos_asignados,
-    usados: b.puntos_utilizados,
-    saldo: b.puntos_asignados - b.puntos_utilizados,
-  }));
+      .get("consultas/bolsas_por_rango/")
+      .then((res) => setDatos(res.data))
+      .catch((err) => console.log("Error:", err));
+  }, []);
 
   return (
-    <div className="p-6 space-y-6">
-      <h2 className="text-2xl font-bold text-primary">Bolsas por Rango</h2>
+    <div className="page-container animate-fadeIn">
 
-      <div className="flex gap-3">
-        <input
-          type="number"
-          className="border p-2 rounded"
-          value={minimo}
-          onChange={(e) => setMinimo(e.target.value)}
-        />
-        <input
-          type="number"
-          className="border p-2 rounded"
-          value={maximo}
-          onChange={(e) => setMaximo(e.target.value)}
-        />
+      <h1 className="page-title">Reporte: Bolsas por Rango</h1>
 
-        <button
-          onClick={consultar}
-          className="bg-primary text-white px-4 py-2 rounded"
-        >
-          Buscar
-        </button>
+      <div className="figma-card">
+        <h3 className="figma-card-title mb-3">Resultados</h3>
+
+        <FigmaTable
+          columns={[
+            { label: "Cliente", field: "cliente" },
+            { label: "Puntos Asignados", field: "puntos_asignados" },
+            { label: "Puntos Usados", field: "puntos_utilizados" },
+            { label: "Vencimiento", field: "fecha_caducidad" },
+          ]}
+          data={datos}
+        />
       </div>
 
-      <Table headers={headers} rows={rows} />
     </div>
   );
 }

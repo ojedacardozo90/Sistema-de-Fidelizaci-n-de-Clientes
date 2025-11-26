@@ -18,6 +18,7 @@ Este archivo fue revisado y documentado para:
 
 from django.db import models
 from django.utils import timezone
+from backend.clientes.models import Cliente
 
 
 
@@ -113,6 +114,43 @@ class ParametrizacionVencimiento(models.Model):
         verbose_name_plural = "Parametrizaciones de Vencimiento"
         ordering = ["-fecha_inicio"]
 
+# 3.1) PROMOCIONES ESPECIALES
+# ============================================================
+class Promocion(models.Model):
+    """
+    Define promociones especiales que impactan la asignación de puntos.
+
+    Tipos:
+      - MULTIPLICADOR → multiplica los puntos (ej: 2x, 3x)
+      - BONUS → suma puntos fijos extra (ej: +100 pts)
+
+    Fechas:
+      - fecha_inicio / fecha_fin → período de vigencia
+    """
+
+    TIPO_CHOICES = [
+        ("MULTIPLICADOR", "Multiplicador"),
+        ("BONUS", "Bonus fijo"),
+    ]
+
+    nombre = models.CharField(max_length=200)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    valor = models.PositiveIntegerField(
+        help_text="Ej: multiplicador 2 = 2x, bonus 100 = 100 puntos"
+    )
+
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.tipo} - {self.valor})"
+
+    class Meta:
+        verbose_name = "Promoción"
+        verbose_name_plural = "Promociones"
+        ordering = ["-fecha_inicio"]
 
 
 
@@ -225,3 +263,109 @@ class UsoPuntosDetalle(models.Model):
         verbose_name = "Detalle de Uso de Puntos"
         verbose_name_plural = "Detalles de Uso de Puntos"
         ordering = ["uso_id"]
+
+# ============================================================
+# 7) GAMIFICACIÓN: Insignias y Desafíos
+# ============================================================
+
+class Insignia(models.Model):
+    """
+    Insignias que el cliente puede obtener por logros específicos.
+    Ejemplo:
+      - "Primer Canje"
+      - "Acumula 1000 puntos"
+      - "Cliente Diamante"
+    """
+    nombre = models.CharField(max_length=100)
+    descripcion = models.CharField(max_length=300)
+    icono = models.CharField(max_length=200, blank=True, null=True)
+
+    def __str__(self):
+        return self.nombre
+
+
+class InsigniaCliente(models.Model):
+    """
+    Relación cliente ↔ insignias desbloqueadas
+    """
+    cliente = models.ForeignKey(
+        'clientes.Cliente',
+        on_delete=models.CASCADE,
+        related_name='insignias'
+    )
+    insignia = models.ForeignKey(Insignia, on_delete=models.CASCADE)
+    fecha_otorgada = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('cliente', 'insignia')
+
+
+class Desafio(models.Model):
+    """
+    Desafíos que pueden completar los clientes.
+    Ejemplo:
+      - "Realizar 5 canjes"
+      - "Acumular 5000 puntos"
+    """
+    nombre = models.CharField(max_length=150)
+    descripcion = models.TextField()
+    meta = models.PositiveIntegerField(help_text="Ej: 5 canjes, 5000 puntos")
+    tipo = models.CharField(
+        max_length=30,
+        choices=[
+            ("CANJES", "Cantidad de canjes"),
+            ("PUNTOS", "Puntos acumulados")
+        ]
+    )
+
+    def __str__(self):
+        return self.nombre
+
+
+class DesafioCliente(models.Model):
+    """
+    Progreso de cada cliente en cada desafío.
+    """
+    cliente = models.ForeignKey(
+        'clientes.Cliente',
+        related_name="desafios",
+        on_delete=models.CASCADE
+    )
+    desafio = models.ForeignKey(Desafio, on_delete=models.CASCADE)
+    progreso = models.PositiveIntegerField(default=0)
+    completado = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('cliente', 'desafio')
+
+class Referido(models.Model):
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name="referidos_programa")
+    referido_email = models.EmailField()
+    fecha = models.DateTimeField(auto_now_add=True)
+    bonus_otorgado = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.cliente.nombre} → {self.referido_email}"
+    
+class ProductoCanje(models.Model):
+    nombre = models.CharField(max_length=120)
+    descripcion = models.TextField(blank=True)
+    puntos_requeridos = models.PositiveIntegerField()
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.puntos_requeridos} pts)"
+    
+class Canje(models.Model):
+    cliente = models.ForeignKey("clientes.Cliente", on_delete=models.CASCADE)
+    producto = models.ForeignKey(ProductoCanje, on_delete=models.CASCADE)
+    fecha = models.DateTimeField(auto_now_add=True)
+    puntos_utilizados = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.cliente} - {self.producto}"
+
+class CanjeDetalle(models.Model):
+    canje = models.ForeignKey(Canje, on_delete=models.CASCADE)
+    bolsa = models.ForeignKey(BolsaPuntos, on_delete=models.CASCADE)
+    puntos_utilizados = models.PositiveIntegerField()

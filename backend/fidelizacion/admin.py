@@ -24,6 +24,9 @@ from rest_framework.response import Response
 from django.core.mail import send_mail
 from django.conf import settings
 from datetime import date, timedelta
+from .models import Promocion 
+from .models import Referido
+
 
 # ============================================================
 #  IMPORTACIONES DE MODELOS Y SERIALIZERS
@@ -46,6 +49,8 @@ admin.site.register(ParametrizacionVencimiento)
 admin.site.register(BolsaPuntos)
 admin.site.register(UsoPuntos)
 admin.site.register(UsoPuntosDetalle)
+admin.site.register(Promocion)
+admin.site.register(Referido)
 
 from .serializers import (
     ClienteSerializer,

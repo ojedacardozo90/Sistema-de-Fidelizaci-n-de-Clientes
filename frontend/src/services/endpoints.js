@@ -1,8 +1,13 @@
+// RUTA: src/services/endpoints.js
+// ENDPOINTS CORRECTOS PARA JWT + CRUDs + CONSULTAS
+
 export const endpoints = {
+
   // ============================
-  // AUTHENTICACIÓN (SimpleJWT)
+  // AUTH CORRECTO (JWT)
   // ============================
   login: "auth/login/",
+  refresh: "auth/refresh/",
 
   // ============================
   // CRUDs PRINCIPALES
@@ -40,4 +45,5 @@ export const endpoints = {
   // DASHBOARD
   // ============================
   dashboard_metrics: "dashboard_metrics/",
+  dashboard_analytics: "dashboard_analytics/",
 };

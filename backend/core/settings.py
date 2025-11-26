@@ -33,7 +33,9 @@ INSTALLED_APPS = [
     'backend.clientes',
     'backend.fidelizacion',
 ]
-
+CRONJOBS = [
+    ('0 */6 * * *', 'backend.fidelizacion.tasks.expirar_bolsas'),
+]
 # Middleware por defecto
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -89,8 +91,12 @@ AUTH_PASSWORD_VALIDATORS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 }
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 # Localización Paraguay

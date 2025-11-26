@@ -1,75 +1,132 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ================================
+   🎨 PALETA FIGMA (Sistema Final)
+   ================================ */
+:root {
+  --primary: #0062ff;
+  --primary-hover: #004ed1;
+
+  --bg: #f5f7fb;
+  --card: #ffffff;
+
+  --text: #1a1a1a;
+  --label: #6b7280;
+  --gray-600: #6b7280;
+
+  --border: #e4e7ec;
+  --table-header: #f2f4f7;
+}
+
+/* ================================
+   BODY GENERAL
+   ================================ */
 body {
-  @apply bg-gray-50 text-gray-800;
+  @apply bg-[var(--bg)] text-[var(--text)] antialiased text-[14px];
+}
+
+/* ================================
+   TITULOS PRINCIPALES
+   ================================ */
+.page-title {
+  @apply text-3xl font-semibold text-gray-800 mt-2 mb-6;
+}
+
+/* ================================
+   FORMULARIOS (Inputs / Select)
+   ================================ */
+.figma-label {
+  @apply block text-sm font-medium text-[var(--label)] mb-1;
+}
+
+.figma-input,
+.figma-select {
+  @apply w-full h-10 px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white
+         text-gray-800 shadow-sm transition-all
+         focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent;
+}
+
+/* ================================
+   BOTONES Figma
+   ================================ */
+.figma-button,
+.figma-btn-primary {
+  @apply bg-[var(--primary)] text-white h-10 px-6 rounded-lg font-semibold text-sm
+         shadow-md transition-all;
+}
+
+.figma-button:hover,
+.figma-btn-primary:hover {
+  @apply bg-[var(--primary-hover)];
+}
+
+/* ================================
+   TABLA Figma
+   ================================ */
+.figma-table {
+  @apply min-w-full bg-white rounded-xl overflow-hidden border border-[var(--border)]
+         shadow-sm;
+}
+
+.figma-table thead tr {
+  @apply bg-[var(--table-header)] text-gray-700;
+}
+
+.figma-table th,
+.figma-table td {
+  @apply px-4 py-3 text-sm border-b;
+}
+
+.figma-table tr:hover {
+  @apply bg-gray-50 transition-all;
+}
+
+/* ================================
+   CARDS FIGMA
+   ================================ */
+.card,
+.figma-card {
+  @apply bg-white rounded-xl p-6 border border-[var(--border)]
+         shadow-[0_1px_3px_rgba(0,0,0,0.08)];
+}
+
+.card-title,
+.figma-card-title {
+  @apply text-lg font-semibold text-gray-800 mb-2;
+}
+
+/* ================================
+   TOPBAR / LAYOUT
+   ================================ */
+.topbar {
+  @apply h-16 bg-white flex items-center justify-between px-6
+         shadow-sm border-b;
+}
+
+/* ================================
+   CONTENEDORES DE PÁGINA
+   ================================ */
+.page-container {
+  @apply max-w-7xl mx-auto;
+}
+
+/* ================================
+   SECCIONES
+   ================================ */
+.section {
+  @apply mb-6;
+}
+
+/* ================================
+   ANIMACIÓN GLOBAL
+   ================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out;
 }

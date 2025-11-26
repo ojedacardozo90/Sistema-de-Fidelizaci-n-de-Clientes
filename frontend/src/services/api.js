@@ -1,10 +1,12 @@
+// RUTA: src/services/api.js
+// Axios configurado con baseURL + envío de Token JWT
+
 import axios from "axios";
 
 const api = axios.create({
   baseURL: "http://localhost:8000/api/",
 });
 
-// Interceptor → agrega token automáticamente
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {

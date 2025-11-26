@@ -1,56 +1,36 @@
-/**
- * PuntosVencerReport.jsx
- * -----------------------------------------------------------
- * Muestra las bolsas que vencerán en X días.
- * Consume:
- *  GET /api/consultas/puntos_a_vencer/?dias=
- * -----------------------------------------------------------
- */
+// RUTA: src/pages/reportes/PuntosVencerReport.jsx
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../../services/api";
-import Table from "../../components/Table";
+import { endpoints } from "../../services/endpoints";
+import FigmaTable from "../../components/base/FigmaTable";
 
 export default function PuntosVencerReport() {
-  const [dias, setDias] = useState(30);
-  const [bolsas, setBolsas] = useState([]);
+  const [datos, setDatos] = useState([]);
 
-  const load = () => {
-    api.get(`/consultas/puntos_a_vencer/?dias=${dias}`)
-      .then((res) => setBolsas(res.data.bolsas))
-      .catch(console.error);
-  };
-
-  const headers = ["ID", "Cliente", "Asignación", "Caducidad", "Puntos", "Estado"];
-
-  const rows = bolsas.map((b) => ({
-    id: b.id,
-    cliente: `${b.cliente.nombre} ${b.cliente.apellido}`,
-    asignacion: b.fecha_asignacion.slice(0, 10),
-    caduca: b.fecha_caducidad.slice(0, 10),
-    puntos: b.puntos_asignados,
-    estado: b.estado,
-  }));
+  useEffect(() => {
+    api
+      .get("consultas/puntos_a_vencer/")
+      .then((res) => setDatos(res.data))
+      .catch((err) => console.log("Error:", err));
+  }, []);
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold text-primary mb-4">
-        Puntos Próximos a Vencer
-      </h2>
+    <div className="page-container animate-fadeIn">
+      <h1 className="page-title">Reporte: Puntos por Vencer</h1>
 
-      <div className="flex gap-4 mb-4">
-        <input
-          type="number"
-          value={dias}
-          onChange={(e) => setDias(e.target.value)}
-          className="border p-2 rounded w-32"
+      <div className="figma-card">
+        <h3 className="figma-card-title mb-3">Listado</h3>
+
+        <FigmaTable
+          columns={[
+            { label: "Cliente", field: "cliente" },
+            { label: "Puntos", field: "puntos" },
+            { label: "Vencimiento", field: "fecha_vencimiento" },
+          ]}
+          data={datos}
         />
-        <button onClick={load} className="bg-primary text-white px-4 py-2 rounded">
-          Consultar
-        </button>
       </div>
-
-      <Table headers={headers} rows={rows} />
     </div>
   );
 }

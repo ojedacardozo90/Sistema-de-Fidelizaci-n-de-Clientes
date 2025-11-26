@@ -1,72 +1,134 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
 import api from "../../services/api";
 import { endpoints } from "../../services/endpoints";
 
-export default function ClienteForm({ cliente, onSuccess }) {
+import FigmaInput from "../../components/base/FigmaInput";
+
+export default function ClienteForm() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
-    nombre: cliente?.nombre || "",
-    apellido: cliente?.apellido || "",
-    numero_documento: cliente?.numero_documento || "",
-    tipo_documento: cliente?.tipo_documento || "CI",
-    nacionalidad: cliente?.nacionalidad || "Paraguaya",
-    email: cliente?.email || "",
-    telefono: cliente?.telefono || "",
-    fecha_nacimiento: cliente?.fecha_nacimiento || "",
+    nombre: "",
+    apellido: "",
+    numero_documento: "",
+    tipo_documento: "",
+    nacionalidad: "",
+    email: "",
+    telefono: "",
+    fecha_nacimiento: "",
   });
+
+  // Cargar datos si es edición
+  useEffect(() => {
+    if (id) {
+      api.get(`${endpoints.clientes}${id}/`).then((res) => {
+        setForm(res.data);
+      });
+    }
+  }, [id]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const save = () => {
-    const request = cliente
-      ? api.put(`${endpoints.clientes}${cliente.id}/`, form)
+  const guardar = () => {
+    const request = id
+      ? api.put(`${endpoints.clientes}${id}/`, form)
       : api.post(endpoints.clientes, form);
 
-    request
-      .then(() => onSuccess())
-      .catch((err) => console.error(err));
+    request.then(() => navigate("/clientes"));
   };
 
   return (
-    <div className="space-y-4 w-[400px]">
-      <h2 className="text-xl font-bold text-primary">
-        {cliente ? "Editar Cliente" : "Registrar Cliente"}
-      </h2>
+    <div className="bg-white rounded-xl shadow-card p-8 border border-gray-200">
 
-      <div className="grid grid-cols-2 gap-4">
-        <input name="nombre" placeholder="Nombre" value={form.nombre} onChange={handleChange}
-               className="border p-2 rounded" />
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">
+        {id ? "Editar Cliente" : "Nuevo Cliente"}
+      </h1>
 
-        <input name="apellido" placeholder="Apellido" value={form.apellido} onChange={handleChange}
-               className="border p-2 rounded" />
+      {/* GRID 2 COLUMNAS EXACTO COMO FIGMA */}
+      <div className="grid grid-cols-2 gap-6">
 
-        <input name="numero_documento" placeholder="Documento"
-               value={form.numero_documento} onChange={handleChange}
-               className="border p-2 rounded" />
+        <FigmaInput
+          label="Nombre"
+          name="nombre"
+          value={form.nombre}
+          onChange={handleChange}
+        />
 
-        <input name="tipo_documento" placeholder="Tipo Doc"
-               value={form.tipo_documento} onChange={handleChange}
-               className="border p-2 rounded" />
+        <FigmaInput
+          label="Apellido"
+          name="apellido"
+          value={form.apellido}
+          onChange={handleChange}
+        />
 
-        <input name="nacionalidad" placeholder="Nacionalidad"
-               value={form.nacionalidad} onChange={handleChange}
-               className="border p-2 rounded" />
+        <FigmaInput
+          label="Número de Documento"
+          name="numero_documento"
+          value={form.numero_documento}
+          onChange={handleChange}
+        />
 
-        <input name="email" placeholder="Email" value={form.email} onChange={handleChange}
-               className="border p-2 rounded" />
+        <FigmaInput
+          label="Tipo de Documento"
+          name="tipo_documento"
+          value={form.tipo_documento}
+          onChange={handleChange}
+        />
 
-        <input name="telefono" placeholder="Teléfono" value={form.telefono} onChange={handleChange}
-               className="border p-2 rounded" />
+        <FigmaInput
+          label="Nacionalidad"
+          name="nacionalidad"
+          value={form.nacionalidad}
+          onChange={handleChange}
+        />
 
-        <input type="date" name="fecha_nacimiento"
-               value={form.fecha_nacimiento} onChange={handleChange}
-               className="border p-2 rounded" />
+        <FigmaInput
+          label="Email"
+          name="email"
+          value={form.email}
+          onChange={handleChange}
+        />
+
+        <FigmaInput
+          label="Teléfono"
+          name="telefono"
+          value={form.telefono}
+          onChange={handleChange}
+        />
+
+        <FigmaInput
+          label="Fecha de Nacimiento"
+          type="date"
+          name="fecha_nacimiento"
+          value={form.fecha_nacimiento}
+          onChange={handleChange}
+        />
+
       </div>
 
-      <button className="bg-primary text-white w-full py-2 rounded" onClick={save}>
-        Guardar
-      </button>
+      {/* BOTÓN GUARDAR IGUAL FIGMA */}
+      <div className="mt-8 flex justify-end">
+        <button
+          onClick={guardar}
+          className="
+            bg-primary 
+            text-white 
+            px-6 py-3 
+            rounded-lg 
+            font-semibold 
+            hover:bg-primaryDark 
+            transition
+          "
+        >
+          Guardar Cliente
+        </button>
+      </div>
+
     </div>
   );
 }

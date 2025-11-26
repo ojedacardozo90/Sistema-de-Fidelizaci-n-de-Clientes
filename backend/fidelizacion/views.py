@@ -20,16 +20,26 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 
+
+
 # ============================================================
 #  MODELOS Y SERIALIZERS
 # ============================================================
 from backend.clientes.models import Cliente
 from .models import (
+    
     ConceptoPuntos,
     ReglaPuntos,
     ParametrizacionVencimiento,
     BolsaPuntos,
     UsoPuntos,
+    Insignia,
+    InsigniaCliente,
+    Desafio,
+    DesafioCliente,
+    ProductoCanje,
+    Canje,
+    Promocion,   # ← IMPORTADO CORRECTO
 )
 from .serializers import (
     ClienteSerializer,
@@ -38,6 +48,13 @@ from .serializers import (
     ParametrizacionVencimientoSerializer,
     BolsaPuntosSerializer,
     UsoPuntosSerializer,
+    InsigniaSerializer,
+    InsigniaClienteSerializer,
+    DesafioSerializer,
+    DesafioClienteSerializer,
+    ProductoCanjeSerializer,
+    CanjeSerializer,
+    PromocionSerializer,    # ← EL QUE FALTABA
 )
 
 
@@ -77,6 +94,11 @@ class VencimientoViewSet(viewsets.ModelViewSet):
     serializer_class = ParametrizacionVencimientoSerializer
     pagination_class = StandardPagination
 
+class PromocionViewSet(viewsets.ModelViewSet):
+    queryset = Promocion.objects.all().order_by("-fecha_inicio")
+    serializer_class = PromocionSerializer
+    pagination_class = StandardPagination
+
 
 class BolsaViewSet(viewsets.ModelViewSet):
     queryset = BolsaPuntos.objects.select_related("cliente").all().order_by("id")
@@ -88,6 +110,26 @@ class UsoViewSet(viewsets.ModelViewSet):
     queryset = UsoPuntos.objects.select_related("cliente", "concepto").all().order_by("-fecha")
     serializer_class = UsoPuntosSerializer
     pagination_class = StandardPagination
+
+class InsigniaViewSet(viewsets.ModelViewSet):
+    queryset = Insignia.objects.all()
+    serializer_class = InsigniaSerializer
+
+class DesafioViewSet(viewsets.ModelViewSet):
+    queryset = Desafio.objects.all()
+    serializer_class = DesafioSerializer
+
+class InsigniaClienteViewSet(viewsets.ModelViewSet):
+    queryset = InsigniaCliente.objects.all()
+    serializer_class = InsigniaClienteSerializer
+
+class DesafioClienteViewSet(viewsets.ModelViewSet):
+    queryset = DesafioCliente.objects.all()
+    serializer_class = DesafioClienteSerializer
+    
+class ProductoCanjeViewSet(viewsets.ModelViewSet):
+    queryset = ProductoCanje.objects.all()
+    serializer_class = ProductoCanjeSerializer
 
 
 # ============================================================
@@ -162,3 +204,44 @@ def ranking_clientes(request):
         "total_en_sistema": len(resultado),
         "ranking": ranking[:5]
     })
+
+@api_view(["POST"])
+def referir_cliente(request):
+    try:
+        cliente_id = request.data.get("cliente_id")
+        email_referido = request.data.get("email")
+
+        if not cliente_id or not email_referido:
+            return Response({"error": "Enviar cliente_id y email del referido."}, status=400)
+
+        cliente = Cliente.objects.get(pk=cliente_id)
+
+        # Bonus fijo por referir
+        BONUS = 100
+
+        # Registrar referido
+        ref = Referido.objects.create(
+            cliente=cliente,
+            referido_email=email_referido,
+            bonus_otorgado=BONUS
+        )
+
+        # Dar puntos de regalo
+        BolsaPuntos.objects.create(
+            cliente=cliente,
+            fecha_asignacion=timezone.now(),
+            fecha_caducidad=timezone.now() + timezone.timedelta(days=365),
+            puntos_asignados=BONUS,
+            puntos_utilizados=0,
+            monto_operacion=0,
+            estado="ACTIVO"
+        )
+
+        return Response({
+            "mensaje": "Referido registrado",
+            "bonus_otorgado": BONUS,
+            "referido": email_referido
+        })
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)

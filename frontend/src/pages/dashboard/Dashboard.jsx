@@ -1,14 +1,16 @@
 // RUTA: src/pages/dashboard/Dashboard.jsx
+// Dashboard profesional — Igual al Figma / PDF
 
 import { useEffect, useState } from "react";
+import api from "../../services/api";
+import { Bar, Doughnut } from "react-chartjs-2";
+
 import {
   Chart,
   ArcElement,
   BarElement,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
   Tooltip,
   Legend,
 } from "chart.js";
@@ -18,177 +20,160 @@ Chart.register(
   BarElement,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
   Tooltip,
   Legend
 );
 
-import { Bar, Doughnut, Line } from "react-chartjs-2";
-import { Link } from "react-router-dom";
-import api from "../../services/api";
-import { endpoints } from "../../services/endpoints";
-
 export default function Dashboard() {
-  const [clientes, setClientes] = useState([]);
-  const [bolsas, setBolsas] = useState([]);
-  const [usos, setUsos] = useState([]);
-  const [puntosVencer, setPuntosVencer] = useState([]);
+  const [metrics, setMetrics] = useState(null);
 
+  // 🔥 FIX PRINCIPAL: remover la barra inicial "/"
   useEffect(() => {
-    // CLIENTES
-    api.get(endpoints.clientes).then((res) => {
-      console.log("CLIENTES => ", res.data);
-      setClientes(res.data?.results ?? []);
-    });
-
-    // BOLSAS
-    api.get(endpoints.bolsas).then((res) => {
-      console.log("BOLSAS => ", res.data);
-      setBolsas(res.data?.results ?? []);
-    });
-
-    // USOS
-    api.get(endpoints.usos).then((res) => {
-      console.log("USOS => ", res.data);
-      setUsos(res.data?.results ?? []);
-    });
-
-    // PUNTOS A VENCER (CORREGIDO)
     api
-      .get(endpoints.consultas.puntos_a_vencer + "?dias=30")
-      .then((res) => {
-        console.log("PUNTOS_VENCER => ", res.data);
-        setPuntosVencer(res.data?.bolsas ?? []);
-      });
-
+      .get("dashboard_metrics/")
+      .then((res) => setMetrics(res.data))
+      .catch((err) => console.log("Error Dashboard:", err));
   }, []);
 
-  // =====================================================================
-  // KPIs
-  // =====================================================================
-  const totalClientes = clientes.length;
-  const puntosAsignados = bolsas.reduce((acc, b) => acc + b.puntos_asignados, 0);
-  const puntosUsados = usos.reduce((acc, u) => acc + u.puntos_utilizados, 0);
-  const puntosPorVencer = puntosVencer.reduce(
-    (acc, b) => acc + (b.puntos_asignados - b.puntos_utilizados),
-    0
-  );
+  if (!metrics)
+    return <p className="text-gray-600 p-4">Cargando dashboard...</p>;
 
-  const niveles = {
-    BRONCE: clientes.filter((c) => c.nivel_fidelizacion === "BRONCE").length,
-    PLATA: clientes.filter((c) => c.nivel_fidelizacion === "PLATA").length,
-    ORO: clientes.filter((c) => c.nivel_fidelizacion === "ORO").length,
-    DIAMANTE: clientes.filter((c) => c.nivel_fidelizacion === "DIAMANTE").length,
-  };
+  // ===================================================
+  // 1) TARJETAS KPI (IGUAL AL FIGMA)
+  // ===================================================
+  const KPIs = [
+    {
+      title: "Clientes",
+      value: metrics.total_clientes,
+      color: "#0D6EFD",
+    },
+    {
+      title: "Puntos Asignados",
+      value: metrics.puntos_asignados,
+      color: "#20C997",
+    },
+    {
+      title: "Puntos Usados",
+      value: metrics.puntos_utilizados,
+      color: "#FD7E14",
+    },
+    {
+      title: "Puntos Vencidos",
+      value: metrics.puntos_vencidos ?? 0,
+      color: "#DC3545",
+    },
+  ];
 
-  // =====================================================================
-  // Evolución Mensual
-  // =====================================================================
-  const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-
-  const puntosAsignadosMes = Array(12).fill(0);
-  const puntosUsadosMes = Array(12).fill(0);
-
-  bolsas.forEach((b) => {
-    const mes = new Date(b.fecha_asignacion).getMonth();
-    puntosAsignadosMes[mes] += b.puntos_asignados;
-  });
-
-  usos.forEach((u) => {
-    const mes = new Date(u.fecha).getMonth();
-    puntosUsadosMes[mes] += u.puntos_utilizados;
-  });
-
-  const lineData = {
-    labels: meses,
+  // ===================================================
+  // 2) GRÁFICO DE BARRAS
+  // ===================================================
+  const chartData = {
+    labels: ["Asignados", "Usados", "Vencidos", "Por vencer"],
     datasets: [
       {
-        label: "Puntos Asignados",
-        data: puntosAsignadosMes,
-        borderColor: "#2563eb",
-        backgroundColor: "rgba(37, 99, 235, 0.3)",
-        tension: 0.3,
-      },
-      {
-        label: "Puntos Usados",
-        data: puntosUsadosMes,
-        borderColor: "#16a34a",
-        backgroundColor: "rgba(22, 163, 74, 0.3)",
-        tension: 0.3,
+        label: "Puntos",
+        data: [
+          metrics.puntos_asignados,
+          metrics.puntos_utilizados,
+          metrics.puntos_vencidos ?? 0,
+          metrics.puntos_por_vencer,
+        ],
+        backgroundColor: ["#0D6EFD", "#FD7E14", "#DC3545", "#20C997"],
+        borderWidth: 0,
       },
     ],
   };
 
+  // ===================================================
+  // 3) DOUGHNUT — Ranking Top 5
+  // ===================================================
+  const topLabels = metrics.top_5.map(
+    (x) => `${x.cliente__nombre} ${x.cliente__apellido}`
+  );
+  const topValues = metrics.top_5.map((x) => x.total);
+
   const doughnutData = {
-    labels: ["Bronce", "Plata", "Oro", "Diamante"],
+    labels: topLabels,
     datasets: [
       {
-        data: [niveles.BRONCE, niveles.PLATA, niveles.ORO, niveles.DIAMANTE],
-        backgroundColor: ["#cd7f32", "#c0c0c0", "#ffd700", "#0ea5e9"],
+        data: topValues,
+        backgroundColor: [
+          "#0D6EFD",
+          "#20C997",
+          "#FD7E14",
+          "#6F42C1",
+          "#DC3545",
+        ],
       },
     ],
   };
 
   return (
-    <div className="space-y-10 p-4">
-      <h1 className="text-2xl font-bold">Dashboard General</h1>
+    <div className="page-container space-y-8 animate-fadeIn">
 
-      {/* BOTONES RÁPIDOS */}
-      <div className="grid grid-cols-3 gap-4">
-        <Link to="/clientes/nuevo" className="bg-blue-600 text-white px-6 py-4 rounded shadow text-center font-semibold hover:bg-blue-700">➕ Crear Cliente</Link>
+      {/* TITULO */}
+      <h1 className="page-title">Dashboard General</h1>
 
-        <Link to="/servicios/cargar_puntos" className="bg-green-600 text-white px-6 py-4 rounded shadow text-center font-semibold hover:bg-green-700">📥 Cargar Puntos</Link>
-
-        <Link to="/servicios/usar_puntos" className="bg-yellow-500 text-white px-6 py-4 rounded shadow text-center font-semibold hover:bg-yellow-600">🔄 Usar Puntos</Link>
+      {/* TARJETAS KPI */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {KPIs.map((kpi, i) => (
+          <div key={i} className="figma-card flex items-center gap-4">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-md"
+              style={{ background: kpi.color }}
+            >
+              {kpi.value}
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm">{kpi.title}</p>
+              <p className="text-xl font-semibold">{kpi.value}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-4 gap-4 mt-6">
-        <div className="p-5 bg-white shadow rounded flex items-center gap-3">
-          <span className="text-blue-600 text-4xl">👥</span>
-          <div>
-            <h2 className="text-gray-500 text-sm">Clientes</h2>
-            <p className="text-2xl font-bold">{totalClientes}</p>
-          </div>
+      {/* GRÁFICOS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* BAR CHART */}
+        <div className="figma-card">
+          <h3 className="figma-card-title mb-3">Estado de Puntos</h3>
+          <Bar data={chartData} />
         </div>
 
-        <div className="p-5 bg-white shadow rounded flex items-center gap-3">
-          <span className="text-green-600 text-4xl">📈</span>
-          <div>
-            <h2 className="text-gray-500 text-sm">Puntos Asignados</h2>
-            <p className="text-2xl font-bold">{puntosAsignados}</p>
-          </div>
+        {/* DOUGHNUT */}
+        <div className="figma-card">
+          <h3 className="figma-card-title mb-3">Top 5 Clientes</h3>
+          <Doughnut data={doughnutData} />
         </div>
 
-        <div className="p-5 bg-white shadow rounded flex items-center gap-3">
-          <span className="text-red-600 text-4xl">🔥</span>
-          <div>
-            <h2 className="text-gray-500 text-sm">Puntos Usados</h2>
-            <p className="text-2xl font-bold">{puntosUsados}</p>
-          </div>
-        </div>
-
-        <div className="p-5 bg-white shadow rounded flex items-center gap-3">
-          <span className="text-yellow-500 text-4xl">⏳</span>
-          <div>
-            <h2 className="text-gray-500 text-sm">Puntos a Vencer</h2>
-            <p className="text-2xl font-bold">{puntosPorVencer}</p>
-          </div>
-        </div>
       </div>
 
-      {/* GRÁFICO LÍNEA */}
-      <div className="bg-white p-6 rounded shadow">
-        <h2 className="text-lg font-bold mb-4">Evolución Mensual de Puntos</h2>
-        <Line data={lineData} />
+      {/* TABLA RANKING */}
+      <div className="figma-card">
+        <h3 className="figma-card-title mb-3">Ranking Detallado</h3>
+
+        <table className="figma-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Puntos Utilizados</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {metrics.top_5.map((item, i) => (
+              <tr key={i}>
+                <td>
+                  {item.cliente__nombre} {item.cliente__apellido}
+                </td>
+                <td>{item.total}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* GRÁFICO NIVELES */}
-      <div className="bg-white p-6 rounded shadow w-1/3 mx-auto">
-        <h2 className="text-lg font-bold mb-4 text-center">Distribución por Niveles</h2>
-        <Doughnut data={doughnutData} />
-      </div>
     </div>
   );
 }

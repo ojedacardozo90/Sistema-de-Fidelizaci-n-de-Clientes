@@ -1,54 +1,89 @@
-import { useState } from "react";
+// RUTA: src/pages/conceptos/ConceptoForm.jsx
+// ------------------------------------------------------
+// Formulario EXACTO según Figma (Página 4)
+// ------------------------------------------------------
+
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
 import api from "../../services/api";
 import { endpoints } from "../../services/endpoints";
 
-export default function ConceptoForm({ concepto, onSuccess }) {
+import FigmaInput from "../../components/base/FigmaInput";
+
+export default function ConceptoForm() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
-    descripcion: concepto?.descripcion || "",
-    puntos_requeridos: concepto?.puntos_requeridos || "",
+    descripcion: "",
+    puntos_requeridos: ""
   });
+
+  useEffect(() => {
+    if (id) {
+      api.get(`${endpoints.conceptos}${id}/`)
+        .then((res) => setForm(res.data));
+    }
+  }, [id]);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const save = () => {
-    const request = concepto
-      ? api.put(`${endpoints.conceptos}${concepto.id}/`, form)
+  const guardar = () => {
+    const request = id
+      ? api.put(`${endpoints.conceptos}${id}/`, form)
       : api.post(endpoints.conceptos, form);
 
-    request
-      .then(() => onSuccess())
-      .catch((err) => console.error(err));
+    request.then(() => navigate("/conceptos"));
   };
 
   return (
-    <div className="space-y-4 w-[380px]">
-      <h2 className="text-xl font-bold text-primary">
-        {concepto ? "Editar Concepto" : "Nuevo Concepto"}
-      </h2>
+    <div className="bg-white rounded-xl shadow-card p-8 border border-gray-200">
 
-      <div className="space-y-3">
-        <input
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">
+        {id ? "Editar Concepto" : "Nuevo Concepto"}
+      </h1>
+
+      {/* Solo 2 campos según Figma */}
+      <div className="grid grid-cols-2 gap-6">
+
+        <FigmaInput
+          label="Descripción"
           name="descripcion"
-          placeholder="Descripción"
+          type="text"
           value={form.descripcion}
           onChange={handleChange}
-          className="border p-2 rounded w-full"
         />
 
-        <input
-          type="number"
+        <FigmaInput
+          label="Puntos requeridos"
           name="puntos_requeridos"
-          placeholder="Puntos requeridos"
+          type="number"
           value={form.puntos_requeridos}
           onChange={handleChange}
-          className="border p-2 rounded w-full"
         />
+
       </div>
 
-      <button className="bg-primary text-white w-full py-2 rounded" onClick={save}>
-        Guardar
-      </button>
+      {/* Botón guardar */}
+      <div className="mt-8 flex justify-end">
+        <button
+          onClick={guardar}
+          className="
+            bg-primary 
+            text-white 
+            px-6 py-3 
+            rounded-lg 
+            font-semibold 
+            hover:bg-primaryDark
+            transition
+          "
+        >
+          Guardar
+        </button>
+      </div>
+
     </div>
   );
 }

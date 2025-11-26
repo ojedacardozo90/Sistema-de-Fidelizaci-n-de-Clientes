@@ -14,7 +14,8 @@
 
 import { useState, useEffect } from "react";
 import api from "../../services/api";
-import Table from "../../components/Table";
+import FigmaTable from "../../components/base/FigmaTable";
+
 
 export default function UsosFiltrosReport() {
   const [clientes, setClientes] = useState([]);

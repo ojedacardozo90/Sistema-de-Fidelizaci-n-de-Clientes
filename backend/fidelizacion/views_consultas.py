@@ -55,6 +55,19 @@ def puntos_a_vencer(request):
         "bolsas": data
     })
 
+@api_view(["GET"])
+def bolsas_proximo_vencer(request):
+    """
+    Devuelve bolsas cuya fecha de caducidad está dentro de 30 días.
+    """
+    limite = timezone.now() + timezone.timedelta(days=30)
+
+    bolsas = BolsaPuntos.objects.filter(
+        estado="ACTIVO",
+        fecha_caducidad__lte=limite
+    )
+
+    return Response(BolsaPuntosSerializer(bolsas, many=True).data)
 
 
 # 2) RANKING DE CLIENTES
@@ -150,7 +163,7 @@ def usos_por_cliente(request):
 @api_view(["GET"])
 def clientes_cumpleanios(request):
     """
-    GET /api/consultas/clientes_cumpleanios/?mes=1&dia=15
+    GET /api/consultas/clientes_cumpleanios/?mes=3&dia=15
     """
     mes = request.GET.get("mes")
     dia = request.GET.get("dia")
@@ -158,12 +171,13 @@ def clientes_cumpleanios(request):
     if not mes:
         return Response({"error": "Debe enviar mes"}, status=400)
 
-    clientes = Cliente.objects.filter(fecha_nacimiento__month=mes)
+    qs = Cliente.objects.filter(fecha_nacimiento__month=mes)
 
     if dia:
-        clientes = clientes.filter(fecha_nacimiento__day=dia)
+        qs = qs.filter(fecha_nacimiento__day=dia)
 
-    return Response(ClienteSerializer(clientes, many=True).data)
+    return Response(ClienteSerializer(qs, many=True).data)
+
 
 
 # 9) CLIENTES POR APELLIDO (APROX)
@@ -178,6 +192,21 @@ def clientes_por_apellido(request):
         return Response({"error": "Debe enviar apellido"}, status=400)
 
     clientes = Cliente.objects.filter(apellido__icontains=apellido)
+    return Response(ClienteSerializer(clientes, many=True).data)
+
+# 9.1) CLIENTES POR NOMBRE (APROX)
+# ============================================================
+@api_view(["GET"])
+def clientes_por_nombre(request):
+    """
+    GET /api/consultas/clientes_por_nombre/?nombre=Ra
+    Busca coincidencias aproximadas en el nombre del cliente.
+    """
+    nombre = request.GET.get("nombre")
+    if not nombre:
+        return Response({"error": "Debe enviar nombre"}, status=400)
+
+    clientes = Cliente.objects.filter(nombre__icontains=nombre)
     return Response(ClienteSerializer(clientes, many=True).data)
 
 
@@ -276,3 +305,128 @@ def dashboard_metrics(request):
         },
         status=200
     )
+# 11) CLIENTES POR NOMBRE (APROX)
+# ============================================================
+@api_view(["GET"])
+def clientes_por_nombre(request):
+    """
+    GET /api/consultas/clientes_por_nombre/?nombre=Ju
+    """
+    nombre = request.GET.get("nombre")
+    if not nombre:
+        return Response({"error": "Debe enviar nombre"}, status=400)
+
+    clientes = Cliente.objects.filter(nombre__icontains=nombre)
+    return Response(ClienteSerializer(clientes, many=True).data)
+# ============================================================
+# HISTORIAL DE CANJES POR FECHA
+# ============================================================
+
+@api_view(["GET"])
+def historial_canje_por_fecha(request):
+    fecha = request.query_params.get("fecha")
+    fecha_inicio = request.query_params.get("fecha_inicio")
+    fecha_fin = request.query_params.get("fecha_fin")
+
+    if not fecha and not (fecha_inicio and fecha_fin):
+        return Response({"error": "Enviar fecha=YYYY-MM-DD o fecha_inicio & fecha_fin"}, status=400)
+
+    usos = UsoPuntos.objects.all()
+
+    if fecha:
+        usos = usos.filter(fecha__date=fecha)
+
+    if fecha_inicio and fecha_fin:
+        usos = usos.filter(fecha__date__range=[fecha_inicio, fecha_fin])
+
+    usos = usos.order_by("-fecha")
+
+    data = []
+    for uso in usos:
+        detalles = UsoPuntosDetalle.objects.filter(uso=uso)
+        data.append({
+            "cliente": f"{uso.cliente.nombre} {uso.cliente.apellido}",
+            "fecha": uso.fecha,
+            "concepto": uso.concepto.descripcion,
+            "puntos_utilizados": uso.puntos_utilizados,
+            "detalles": [
+                {
+                    "bolsa_id": d.bolsa.id,
+                    "puntos": d.puntos_utilizados
+                }
+                for d in detalles
+            ]
+        })
+
+    return Response(data)
+@api_view(["GET"])
+def historial_canje_por_producto(request):
+    concepto_id = request.query_params.get("concepto_id")
+
+    if not concepto_id:
+        return Response({"error": "Enviar concepto_id"}, status=400)
+
+    usos = UsoPuntos.objects.filter(concepto_id=concepto_id).order_by("-fecha")
+
+    data = []
+    for uso in usos:
+        detalles = UsoPuntosDetalle.objects.filter(uso=uso)
+        data.append({
+            "cliente": f"{uso.cliente.nombre} {uso.cliente.apellido}",
+            "fecha": uso.fecha,
+            "puntos_utilizados": uso.puntos_utilizados,
+            "detalles": [
+                {
+                    "bolsa_id": d.bolsa.id,
+                    "puntos": d.puntos_utilizados
+                }
+                for d in detalles
+            ]
+        })
+
+    return Response(data)
+# ============================================================
+# HISTORIAL AVANZADO DE CANJES (filtros múltiples)
+# ============================================================
+
+@api_view(["GET"])
+def historial_canje_filtros(request):
+    fecha = request.GET.get("fecha")
+    desde = request.GET.get("desde")
+    hasta = request.GET.get("hasta")
+    concepto_id = request.GET.get("concepto_id")
+    cliente_id = request.GET.get("cliente_id")
+
+    usos = UsoPuntos.objects.all().order_by("-fecha")
+
+    if fecha:
+        usos = usos.filter(fecha__date=fecha)
+
+    if desde and hasta:
+        usos = usos.filter(fecha__date__range=[desde, hasta])
+
+    if concepto_id:
+        usos = usos.filter(concepto_id=concepto_id)
+
+    if cliente_id:
+        usos = usos.filter(cliente_id=cliente_id)
+
+    data = []
+    for uso in usos:
+        detalles = UsoPuntosDetalle.objects.filter(uso=uso)
+
+        data.append({
+            "fecha": uso.fecha,
+            "cliente": f"{uso.cliente.nombre} {uso.cliente.apellido}",
+            "concepto": uso.concepto.descripcion if uso.concepto else "-",
+            "puntos_utilizados": uso.puntos_utilizados,
+            "detalles": [
+                {
+                    "bolsa_id": d.bolsa.id,
+                    "puntos": d.puntos_utilizados
+                }
+                for d in detalles
+            ],
+        })
+
+    return Response(data)

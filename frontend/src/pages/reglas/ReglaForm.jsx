@@ -1,70 +1,98 @@
-import { useState } from "react";
+// RUTA: src/pages/reglas/ReglaForm.jsx
+// ------------------------------------------------------
+// Formulario EXACTO según Figma (Página 5)
+// ------------------------------------------------------
+
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
 import api from "../../services/api";
 import { endpoints } from "../../services/endpoints";
 
-export default function ReglaForm({ regla, onSuccess }) {
+import FigmaInput from "../../components/base/FigmaInput";
+
+export default function ReglaForm() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
-    limite_inferior: regla?.limite_inferior || "",
-    limite_superior: regla?.limite_superior || "",
-    monto_por_punto: regla?.monto_por_punto || "",
+    limite_inferior: "",
+    limite_superior: "",
+    monto_por_punto: ""
   });
+
+  useEffect(() => {
+    if (id) {
+      api.get(`${endpoints.reglas}${id}/`)
+        .then((res) => setForm(res.data));
+    }
+  }, [id]);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const save = () => {
-    const cleanForm = {
-      ...form,
-      limite_superior: form.limite_superior === "" ? null : form.limite_superior,
-    };
+  const guardar = () => {
+    const request = id
+      ? api.put(`${endpoints.reglas}${id}/`, form)
+      : api.post(endpoints.reglas, form);
 
-    const request = regla
-      ? api.put(`${endpoints.reglas}${regla.id}/`, cleanForm)
-      : api.post(endpoints.reglas, cleanForm);
-
-    request
-      .then(() => onSuccess())
-      .catch((err) => console.error(err));
+    request.then(() => navigate("/reglas"));
   };
 
   return (
-    <div className="space-y-4 w-[400px]">
-      <h2 className="text-xl font-bold text-primary">
-        {regla ? "Editar Regla" : "Nueva Regla"}
-      </h2>
+    <div className="bg-white rounded-xl shadow-card p-8 border border-gray-200">
 
-      <div className="space-y-3">
-        <input
-          type="number"
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">
+        {id ? "Editar Regla de Puntos" : "Nueva Regla de Puntos"}
+      </h1>
+
+      {/* GRID Figma: 2 columnas */}
+      <div className="grid grid-cols-2 gap-6">
+
+        <FigmaInput
+          label="Límite inferior"
           name="limite_inferior"
-          placeholder="Límite inferior"
+          type="number"
           value={form.limite_inferior}
           onChange={handleChange}
-          className="border p-2 rounded w-full"
         />
 
-        <input
-          type="number"
+        <FigmaInput
+          label="Límite superior"
           name="limite_superior"
-          placeholder="Límite superior (opcional)"
+          type="number"
           value={form.limite_superior}
           onChange={handleChange}
-          className="border p-2 rounded w-full"
         />
 
-        <input
-          type="number"
+        <FigmaInput
+          label="Monto por punto (Gs.)"
           name="monto_por_punto"
-          placeholder="Monto equivalente a 1 punto"
+          type="number"
           value={form.monto_por_punto}
           onChange={handleChange}
-          className="border p-2 rounded w-full"
         />
+
       </div>
 
-      <button className="bg-primary text-white w-full py-2 rounded" onClick={save}>
-        Guardar
-      </button>
+      {/* Botón guardar */}
+      <div className="mt-8 flex justify-end">
+        <button
+          onClick={guardar}
+          className="
+            bg-primary 
+            text-white 
+            px-6 py-3 
+            rounded-lg 
+            font-semibold 
+            hover:bg-primaryDark
+            transition
+          "
+        >
+          Guardar
+        </button>
+      </div>
+
     </div>
   );
 }

@@ -1,66 +1,99 @@
-import { useState } from "react";
+// RUTA: src/pages/vencimientos/VencimientoForm.jsx
+// ------------------------------------------------------
+// Formulario EXACTO según el Figma (Página 6)
+// ------------------------------------------------------
+
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+
 import api from "../../services/api";
 import { endpoints } from "../../services/endpoints";
 
-export default function VencimientoForm({ item, onSuccess }) {
+import FigmaInput from "../../components/base/FigmaInput";
+
+export default function VencimientoForm() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
-    fecha_inicio: item?.fecha_inicio || "",
-    fecha_fin: item?.fecha_fin || "",
-    dias_duracion: item?.dias_duracion || "",
+    fecha_inicio: "",
+    fecha_fin: "",
+    dias_duracion: ""
   });
+
+  useEffect(() => {
+    if (id) {
+      api.get(`${endpoints.vencimientos}${id}/`).then((res) => {
+        setForm(res.data);
+      });
+    }
+  }, [id]);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const save = () => {
-    const request = item
-      ? api.put(`${endpoints.vencimientos}${item.id}/`, form)
+  const guardar = () => {
+    const request = id
+      ? api.put(`${endpoints.vencimientos}${id}/`, form)
       : api.post(endpoints.vencimientos, form);
 
-    request
-      .then(() => onSuccess())
-      .catch((err) => console.error(err));
+    request.then(() => navigate("/vencimientos"));
   };
 
   return (
-    <div className="space-y-4 w-[400px]">
-      <h2 className="text-xl font-bold text-primary">
-        {item ? "Editar Parametrización" : "Nueva Parametrización"}
-      </h2>
+    <div className="bg-white rounded-xl shadow-card p-8 border border-gray-200">
 
-      <div className="space-y-3">
-        <label className="text-sm font-semibold">Fecha de Inicio</label>
-        <input
-          type="date"
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">
+        {id ? "Editar Parametrización" : "Nueva Parametrización"}
+      </h1>
+
+      {/* GRID Figma: 2 columnas */}
+      <div className="grid grid-cols-2 gap-6">
+
+        <FigmaInput
+          label="Fecha inicio"
           name="fecha_inicio"
+          type="date"
           value={form.fecha_inicio}
           onChange={handleChange}
-          className="border p-2 rounded w-full"
         />
 
-        <label className="text-sm font-semibold">Fecha de Fin</label>
-        <input
-          type="date"
+        <FigmaInput
+          label="Fecha fin"
           name="fecha_fin"
+          type="date"
           value={form.fecha_fin}
           onChange={handleChange}
-          className="border p-2 rounded w-full"
         />
 
-        <label className="text-sm font-semibold">Días de Duración</label>
-        <input
-          type="number"
+        <FigmaInput
+          label="Días de duración"
           name="dias_duracion"
+          type="number"
           value={form.dias_duracion}
           onChange={handleChange}
-          className="border p-2 rounded w-full"
-          min="1"
         />
+
       </div>
 
-      <button className="bg-primary text-white w-full py-2 rounded" onClick={save}>
-        Guardar
-      </button>
+      {/* Botón guardar */}
+      <div className="mt-8 flex justify-end">
+        <button
+          onClick={guardar}
+          className="
+            bg-primary 
+            text-white 
+            px-6 py-3 
+            rounded-lg 
+            font-semibold 
+            hover:bg-primaryDark
+            transition
+          "
+        >
+          Guardar
+        </button>
+      </div>
+
     </div>
   );
 }
